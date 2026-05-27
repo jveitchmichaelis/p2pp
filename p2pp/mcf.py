@@ -383,7 +383,15 @@ def parse_gcode_first_pass():
         if v.block_classification != v.previous_block_classification:
 
             if v.block_classification in [CLS_TOOL_START, CLS_TOOL_UNLOAD, CLS_EMPTY, CLS_BRIM]:
-                for idx in range(backpass_line, len(v.parsed_gcode)):
+                bp = backpass_line
+                # don't backpass over real print moves between the last                                                                             
+                # travel and the toolchange comment.  
+                if v.block_classification in [CLS_TOOL_START, CLS_TOOL_UNLOAD] and bp >= 0:
+                    for idx in range(bp, len(v.parsed_gcode) - 1):
+                        if v.parsed_gcode[idx][gcode.EXTRUDE]:
+                            bp = len(v.parsed_gcode) - 1
+                            break
+                for idx in range(bp, len(v.parsed_gcode)):
                     v.parsed_gcode[idx][gcode.CLASS] = v.block_classification
 
         # determine tower size - old method
